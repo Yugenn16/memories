@@ -742,16 +742,17 @@ function toggleMusic() {
     const audio = document.getElementById('audio-player');
     const btn = document.getElementById('music-btn');
     
-    if (audio.src) {
-        if (audio.paused) {
-            audio.play();
-            btn.innerHTML = '<i class="fas fa-pause"></i>';
-        } else {
-            audio.pause();
-            btn.innerHTML = '<i class="fas fa-play"></i>';
-        }
+    // If no source, load default music first
+    if (!audio.src || audio.src === '') {
+        audio.src = 'music/default-song.mp3';
+    }
+    
+    if (audio.paused) {
+        audio.play();
+        btn.innerHTML = '<i class="fas fa-pause"></i>';
     } else {
-        alert('Please upload a song first by clicking the music icon');
+        audio.pause();
+        btn.innerHTML = '<i class="fas fa-play"></i>';
     }
 }
 
@@ -783,13 +784,23 @@ async function loadMusic() {
 async function loadSavedMusic() {
     try {
         const data = await loadData();
+        const audio = document.getElementById('audio-player');
+        
         if (data.music) {
-            const audio = document.getElementById('audio-player');
+            // Load saved music from server
             audio.src = data.music;
+            document.getElementById('music-btn').innerHTML = '<i class="fas fa-play"></i>';
+        } else {
+            // Load default music if no saved music
+            audio.src = 'music/default-song.mp3';
             document.getElementById('music-btn').innerHTML = '<i class="fas fa-play"></i>';
         }
     } catch (error) {
         console.error('Failed to load saved music:', error);
+        // Fallback to default music on error
+        const audio = document.getElementById('audio-player');
+        audio.src = 'music/default-song.mp3';
+        document.getElementById('music-btn').innerHTML = '<i class="fas fa-play"></i>';
     }
 }
 
