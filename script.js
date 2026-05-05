@@ -272,14 +272,7 @@ function displayRandomQuote() {
         const quote = loveQuotes[Math.floor(Math.random() * loveQuotes.length)];
         const quoteElement = document.getElementById('love-quote');
         if (quoteElement) {
-            // Fade out
-            quoteElement.style.opacity = '0';
-            
-            // Change text and fade in
-            setTimeout(() => {
-                quoteElement.textContent = quote;
-                quoteElement.style.opacity = '1';
-            }, 300);
+            quoteElement.textContent = quote;
         }
     } catch (error) {
         console.error('Error displaying quote:', error);
