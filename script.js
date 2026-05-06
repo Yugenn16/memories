@@ -437,9 +437,9 @@ function previewImages() {
     let processedCount = 0;
     
     Array.from(files).forEach(file => {
-        // Check individual file size (max 5MB before compression)
-        if (file.size > 5 * 1024 * 1024) {
-            alert(`${file.name} is too large (max 5MB per photo)`);
+        // Check individual file size (max 7MB before compression)
+        if (file.size > 7 * 1024 * 1024) {
+            alert(`${file.name} is too large (max 7MB per photo)`);
             return;
         }
         
@@ -912,9 +912,9 @@ function editMainPhoto() {
 async function uploadMainPhoto() {
     const file = document.getElementById('main-photo-upload').files[0];
     if (file) {
-        // Check file size (limit to 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('File is too large. Please choose a file smaller than 5MB.');
+        // Check file size (limit to 7MB)
+        if (file.size > 7 * 1024 * 1024) {
+            alert('File is too large. Please choose a file smaller than 7MB.');
             return;
         }
         
