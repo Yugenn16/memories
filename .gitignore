@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Environment variables
+.env
+
 # Data files (contains personal memories)
 data.json
 
@@ -11,21 +14,5 @@ data.json
 .DS_Store
 Thumbs.db
 
-# Documentation (optional - uncomment to exclude)
-# ARCHITECTURE.txt
-# CHANGES-SUMMARY.md
-# COUNTER-ADJUSTMENT-GUIDE.md
-# COUNTER-FEATURE-COMPLETE.md
-# DEPLOYMENT-GUIDE.md
-# DIRECT-COUNTER-EDIT-GUIDE.md
-# HOW-TO-RUN.txt
-# README-NEW.md
-# SETUP.md
-# TESTING-CHECKLIST.md
-# TROUBLESHOOTING.md
-
 # Local scripts
 start-server.bat
-
-# Deployment files (optional)
-# Procfile
