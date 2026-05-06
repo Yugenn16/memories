@@ -428,18 +428,67 @@ function previewImages() {
     preview.innerHTML = '';
     uploadedImages = [];
     
+    if (files.length > 10) {
+        alert('Maximum 10 photos per date. Please select fewer photos.');
+        document.getElementById('memory-photos').value = '';
+        return;
+    }
+    
+    let processedCount = 0;
+    
     Array.from(files).forEach(file => {
+        // Check individual file size (max 5MB before compression)
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`${file.name} is too large (max 5MB per photo)`);
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = (e) => {
-            uploadedImages.push(e.target.result);
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.className = 'preview-img';
-            img.alt = 'preview-photo';
-            preview.appendChild(img);
+            // Compress image before storing
+            compressImage(e.target.result, (compressedImage) => {
+                uploadedImages.push(compressedImage);
+                const img = document.createElement('img');
+                img.src = compressedImage;
+                img.className = 'preview-img';
+                img.alt = 'preview-photo';
+                preview.appendChild(img);
+                
+                processedCount++;
+                if (processedCount === files.length) {
+                    console.log(`Processed ${processedCount} images`);
+                }
+            });
         };
         reader.readAsDataURL(file);
     });
+}
+
+// Image compression function
+function compressImage(base64, callback, maxWidth = 1200, quality = 0.8) {
+    const img = new Image();
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Resize if too large
+        if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to compressed base64
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        callback(compressedBase64);
+    };
+    img.src = base64;
 }
 
 function previewExistingImages() {
@@ -474,12 +523,17 @@ async function saveMemory() {
         timestamp: new Date().toISOString()
     };
     
-    await saveMemories();
-    alert('Memory saved! ❤️');
-    closeModal();
-    renderCalendar();
-    renderTimeline();
-    renderGallery();
+    try {
+        await saveMemories();
+        alert(`Memory saved with ${uploadedImages.length} photo(s)! ❤️`);
+        closeModal();
+        renderCalendar();
+        renderTimeline();
+        renderGallery();
+    } catch (error) {
+        console.error('Failed to save memory:', error);
+        alert('Failed to save memory. The photos might be too large. Try uploading fewer or smaller photos.');
+    }
 }
 
 async function deleteMemory() {
@@ -866,10 +920,13 @@ async function uploadMainPhoto() {
         
         const reader = new FileReader();
         reader.onload = async function(e) {
-            mainPhoto = e.target.result;
-            await saveMainPhoto(mainPhoto);
-            loadMainPhoto();
-            alert('Main photo updated! ❤️');
+            // Compress image before saving
+            compressImage(e.target.result, async (compressedImage) => {
+                mainPhoto = compressedImage;
+                await saveMainPhoto(mainPhoto);
+                loadMainPhoto();
+                alert('Main photo updated! ❤️');
+            }, 1920, 0.85); // Higher quality for main photo
         };
         reader.readAsDataURL(file);
     }
