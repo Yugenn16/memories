@@ -18,6 +18,12 @@ let dataCollection;
 
 // Connect to MongoDB
 async function connectDB() {
+    if (!MONGODB_URI) {
+        console.error('❌ MONGODB_URI is not defined in environment variables!');
+        console.error('Please set MONGODB_URI in your .env file or Render environment variables.');
+        process.exit(1);
+    }
+    
     try {
         const client = new MongoClient(MONGODB_URI, {
             serverApi: {
