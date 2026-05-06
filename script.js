@@ -878,14 +878,21 @@ async function uploadMainPhoto() {
 function loadMainPhoto() {
     console.log('loadMainPhoto called, mainPhoto:', mainPhoto ? 'exists' : 'null');
     const heroImg = document.querySelector('.hero-image img');
-    if (heroImg && mainPhoto) {
-        heroImg.src = mainPhoto;
-        heroImg.style.objectFit = 'cover';
-        heroImg.style.width = '100%';
-        heroImg.style.height = '100%';
-        console.log('Main photo loaded successfully');
+    if (heroImg) {
+        if (mainPhoto) {
+            heroImg.src = mainPhoto;
+            heroImg.style.objectFit = 'cover';
+            heroImg.style.width = '100%';
+            heroImg.style.height = '100%';
+            heroImg.style.opacity = '1';
+            console.log('Main photo loaded successfully');
+        } else {
+            // If no main photo uploaded, show default
+            heroImg.src = 'images/couple.jpg';
+            heroImg.style.opacity = '1';
+        }
     } else {
-        console.log('Hero image element or mainPhoto not found');
+        console.log('Hero image element not found');
     }
 }
 
