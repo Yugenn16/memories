@@ -836,7 +836,8 @@ window.onclick = function(event) {
     if (event.target === memoryModal) {
         closeModal();
     }
-    if (event.target === imageModal) {
+    // Only close image modal if clicking on the modal background, not the content
+    if (event.target === imageModal && !event.target.classList.contains('album-nav')) {
         closeImageModal();
     }
 }
@@ -906,9 +907,9 @@ function openGalleryAlbum(date) {
     // Create album viewer UI
     modal.innerHTML = `
         <span class="close" onclick="closeImageModal()">&times;</span>
-        <button class="album-nav album-prev" onclick="navigateAlbum(-1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="album-nav album-prev" id="album-prev-btn"><i class="fas fa-chevron-left"></i></button>
         <img id="enlarged-image" src="${memory.images[0]}" alt="album-photo">
-        <button class="album-nav album-next" onclick="navigateAlbum(1)"><i class="fas fa-chevron-right"></i></button>
+        <button class="album-nav album-next" id="album-next-btn"><i class="fas fa-chevron-right"></i></button>
         <div class="album-info">
             <p>${memory.title || 'Untitled'}</p>
             <p>${currentAlbumIndex + 1} / ${memory.images.length}</p>
@@ -917,13 +918,15 @@ function openGalleryAlbum(date) {
     
     modal.style.display = 'flex';
     
-    // Add touch and keyboard event listeners
+    // Add all event listeners
     attachAlbumEventListeners();
 }
 
 function attachAlbumEventListeners() {
     const modal = document.getElementById('image-modal');
     const albumImg = modal.querySelector('#enlarged-image');
+    const prevBtn = document.getElementById('album-prev-btn');
+    const nextBtn = document.getElementById('album-next-btn');
     
     if (albumImg) {
         // Remove old listeners if any
@@ -933,6 +936,21 @@ function attachAlbumEventListeners() {
         // Add new listeners
         albumImg.addEventListener('touchstart', handleTouchStart, { passive: true });
         albumImg.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+    
+    // Add button click listeners
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateAlbum(-1);
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateAlbum(1);
+        });
     }
     
     // Add keyboard navigation
