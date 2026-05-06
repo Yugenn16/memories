@@ -18,9 +18,21 @@ let dataCollection;
 
 // Connect to MongoDB
 async function connectDB() {
+    console.log('🔍 Checking MONGODB_URI...');
+    console.log('MONGODB_URI exists:', !!MONGODB_URI);
+    console.log('MONGODB_URI length:', MONGODB_URI ? MONGODB_URI.length : 0);
+    console.log('MONGODB_URI starts with:', MONGODB_URI ? MONGODB_URI.substring(0, 20) : 'undefined');
+    
     if (!MONGODB_URI) {
         console.error('❌ MONGODB_URI is not defined in environment variables!');
         console.error('Please set MONGODB_URI in your .env file or Render environment variables.');
+        process.exit(1);
+    }
+    
+    if (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
+        console.error('❌ MONGODB_URI has invalid format!');
+        console.error('Current value:', MONGODB_URI);
+        console.error('Expected format: mongodb+srv://username:password@cluster...');
         process.exit(1);
     }
     
