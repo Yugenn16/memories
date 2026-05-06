@@ -27,6 +27,7 @@ async function loadData() {
         specialDates = data.specialDates || {};
         counterOffset = data.counterOffset || { years: 0, months: 0, days: 0 };
         mainPhoto = data.mainPhoto || null;
+        console.log('Loaded mainPhoto:', mainPhoto ? 'exists' : 'null');
         return data;
     } catch (error) {
         console.error('Failed to load data:', error);
@@ -173,7 +174,7 @@ function logout() {
 async function initializeApp() {
     await loadData();
     loadSpecialDates();
-    loadMainPhoto();
+    loadMainPhoto(); // This will use the mainPhoto variable loaded from loadData()
     updateRelationshipCounter();
     displayRandomQuote();
     startQuoteRotation(); // Start auto-rotating quotes
@@ -543,46 +544,48 @@ function renderTimeline() {
     });
 }
 
-// Gallery
+// Gallery - Group photos by date
 function renderGallery() {
     const grid = document.getElementById('gallery-grid');
     grid.innerHTML = '';
     
-    const allImages = [];
-    Object.keys(memories).forEach(date => {
+    // Group memories by date
+    const dateGroups = [];
+    Object.keys(memories).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
         const memory = memories[date];
         if (memory.images && memory.images.length > 0) {
-            memory.images.forEach(img => {
-                allImages.push({
-                    src: img,
-                    date: date,
-                    title: memory.title
-                });
+            dateGroups.push({
+                date: date,
+                title: memory.title,
+                images: memory.images
             });
         }
     });
     
-    if (allImages.length === 0) {
+    if (dateGroups.length === 0) {
         grid.innerHTML = '<p style="text-align:center; color: var(--text-secondary); grid-column: 1/-1;">No photos yet. Upload your first memory! 📸</p>';
         return;
     }
     
-    allImages.forEach(img => {
+    // Create album for each date
+    dateGroups.forEach(group => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
         
-        const dateObj = new Date(img.date);
+        const dateObj = new Date(group.date);
         const formattedDate = dateObj.toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric', 
             year: 'numeric' 
         });
         
+        // Show first image as thumbnail with photo count badge
         item.innerHTML = `
-            <img src="${img.src}" alt="gallery-photo" onclick="enlargeImage('${img.src}')">
+            <img src="${group.images[0]}" alt="gallery-photo" onclick="openGalleryAlbum('${group.date}')">
             <div class="gallery-overlay">
-                <p>${img.title || 'Untitled'}</p>
+                <p>${group.title || 'Untitled'}</p>
                 <p>${formattedDate}</p>
+                ${group.images.length > 1 ? `<span class="photo-count"><i class="fas fa-images"></i> ${group.images.length}</span>` : ''}
             </div>
         `;
         
@@ -864,13 +867,104 @@ async function uploadMainPhoto() {
 }
 
 function loadMainPhoto() {
-    if (mainPhoto) {
-        const heroImg = document.querySelector('.hero-image img');
-        if (heroImg) {
-            heroImg.src = mainPhoto;
-            heroImg.style.objectFit = 'cover';
-            heroImg.style.width = '100%';
-            heroImg.style.height = '100%';
+    console.log('loadMainPhoto called, mainPhoto:', mainPhoto ? 'exists' : 'null');
+    const heroImg = document.querySelector('.hero-image img');
+    if (heroImg && mainPhoto) {
+        heroImg.src = mainPhoto;
+        heroImg.style.objectFit = 'cover';
+        heroImg.style.width = '100%';
+        heroImg.style.height = '100%';
+        console.log('Main photo loaded successfully');
+    } else {
+        console.log('Hero image element or mainPhoto not found');
+    }
+}
+
+// Gallery Album Viewer with Swipe
+let currentAlbumDate = null;
+let currentAlbumIndex = 0;
+let touchStartX = 0;
+let touchEndX = 0;
+
+function openGalleryAlbum(date) {
+    currentAlbumDate = date;
+    currentAlbumIndex = 0;
+    const memory = memories[date];
+    
+    if (!memory || !memory.images || memory.images.length === 0) return;
+    
+    const modal = document.getElementById('image-modal');
+    const img = document.getElementById('enlarged-image');
+    
+    // Create album viewer UI
+    modal.innerHTML = `
+        <span class="close" onclick="closeImageModal()">&times;</span>
+        <button class="album-nav album-prev" onclick="navigateAlbum(-1)"><i class="fas fa-chevron-left"></i></button>
+        <img id="enlarged-image" src="${memory.images[0]}" alt="album-photo">
+        <button class="album-nav album-next" onclick="navigateAlbum(1)"><i class="fas fa-chevron-right"></i></button>
+        <div class="album-info">
+            <p>${memory.title || 'Untitled'}</p>
+            <p>${currentAlbumIndex + 1} / ${memory.images.length}</p>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+    
+    // Add touch event listeners for swipe
+    const albumImg = modal.querySelector('#enlarged-image');
+    albumImg.addEventListener('touchstart', handleTouchStart, false);
+    albumImg.addEventListener('touchend', handleTouchEnd, false);
+}
+
+function navigateAlbum(direction) {
+    const memory = memories[currentAlbumDate];
+    if (!memory || !memory.images) return;
+    
+    currentAlbumIndex += direction;
+    
+    // Loop around
+    if (currentAlbumIndex < 0) currentAlbumIndex = memory.images.length - 1;
+    if (currentAlbumIndex >= memory.images.length) currentAlbumIndex = 0;
+    
+    const img = document.getElementById('enlarged-image');
+    const info = document.querySelector('.album-info');
+    
+    if (img) {
+        img.style.opacity = '0';
+        setTimeout(() => {
+            img.src = memory.images[currentAlbumIndex];
+            img.style.opacity = '1';
+        }, 150);
+    }
+    
+    if (info) {
+        info.innerHTML = `
+            <p>${memory.title || 'Untitled'}</p>
+            <p>${currentAlbumIndex + 1} / ${memory.images.length}</p>
+        `;
+    }
+}
+
+function handleTouchStart(e) {
+    touchStartX = e.changedTouches[0].screenX;
+}
+
+function handleTouchEnd(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+}
+
+function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+            // Swipe left - next image
+            navigateAlbum(1);
+        } else {
+            // Swipe right - previous image
+            navigateAlbum(-1);
         }
     }
 }
