@@ -172,12 +172,16 @@ function logout() {
 
 // Initialize App
 async function initializeApp() {
-    await loadData();
+    const data = await loadData();
+    // Load main photo immediately after data is loaded
+    if (data.mainPhoto) {
+        mainPhoto = data.mainPhoto;
+        loadMainPhoto();
+    }
     loadSpecialDates();
-    loadMainPhoto(); // This will use the mainPhoto variable loaded from loadData()
     updateRelationshipCounter();
     displayRandomQuote();
-    startQuoteRotation(); // Start auto-rotating quotes
+    startQuoteRotation();
     renderCalendar();
     renderTimeline();
     renderGallery();
@@ -609,6 +613,10 @@ function enlargeImage(src) {
 
 function closeImageModal() {
     document.getElementById('image-modal').style.display = 'none';
+    currentAlbumDate = null;
+    currentAlbumIndex = 0;
+    // Remove keyboard listener
+    document.removeEventListener('keydown', handleKeyboardNav);
 }
 
 // Special Dates
@@ -894,7 +902,6 @@ function openGalleryAlbum(date) {
     if (!memory || !memory.images || memory.images.length === 0) return;
     
     const modal = document.getElementById('image-modal');
-    const img = document.getElementById('enlarged-image');
     
     // Create album viewer UI
     modal.innerHTML = `
@@ -910,10 +917,36 @@ function openGalleryAlbum(date) {
     
     modal.style.display = 'flex';
     
-    // Add touch event listeners for swipe
+    // Add touch and keyboard event listeners
+    attachAlbumEventListeners();
+}
+
+function attachAlbumEventListeners() {
+    const modal = document.getElementById('image-modal');
     const albumImg = modal.querySelector('#enlarged-image');
-    albumImg.addEventListener('touchstart', handleTouchStart, false);
-    albumImg.addEventListener('touchend', handleTouchEnd, false);
+    
+    if (albumImg) {
+        // Remove old listeners if any
+        albumImg.removeEventListener('touchstart', handleTouchStart);
+        albumImg.removeEventListener('touchend', handleTouchEnd);
+        
+        // Add new listeners
+        albumImg.addEventListener('touchstart', handleTouchStart, { passive: true });
+        albumImg.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+    
+    // Add keyboard navigation
+    document.addEventListener('keydown', handleKeyboardNav);
+}
+
+function handleKeyboardNav(e) {
+    if (currentAlbumDate && document.getElementById('image-modal').style.display === 'flex') {
+        if (e.key === 'ArrowLeft') {
+            navigateAlbum(-1);
+        } else if (e.key === 'ArrowRight') {
+            navigateAlbum(1);
+        }
+    }
 }
 
 function navigateAlbum(direction) {
@@ -934,6 +967,8 @@ function navigateAlbum(direction) {
         setTimeout(() => {
             img.src = memory.images[currentAlbumIndex];
             img.style.opacity = '1';
+            // Re-attach event listeners after image change
+            attachAlbumEventListeners();
         }, 150);
     }
     
